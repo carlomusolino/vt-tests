@@ -31,7 +31,7 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
     double dx ;
     double dt ;
 
-    mesh_data_t u ;
+    evolved_field_t<2> u ;
 
     template<typename F> 
     inline __attribute__((always_inline)) 
@@ -104,11 +104,12 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
         
         auto const it_max_reached = iter_ > maxiter_ ;
         auto const t_max_reached = time_ > max_time_ ;
-
+        
         if( it_max_reached or t_max_reached ){
             auto const output = it_max_reached ?
             "Maximum number of iterations reached, terminating\n\n" :
             "Maximum time reached, terminating\n\n" ;
+            fmt::print(output) ; 
             obj_proxy_.broadcast<node_t::work_finished_msg, &node_t::work_finished_cback_>() ;
         } else {
             fmt::print(">> it {} t {} u_max {}\n", iter_,time_, umax) ;
@@ -124,7 +125,7 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
         const auto my_idx = getIndex().x() ;
         
         x.assign(npoints_, 0.) ;
-        u = mesh_data_t(npoints_) ;
+        u.resize(npoints_) ;
 
         double xL =  ( (my_idx) * (npoints_-2*nghost_) ) * dx ; // CHECK
         for( std::size_t ii=nghost_; ii<npoints_-nghost_; ++ii){
@@ -139,8 +140,8 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
         for( std::size_t ii=nghost_; ii<npoints_-nghost_; ++ii){
             u(ii) = std::exp( - (x[ii]-0.5) * (x[ii]-0.5) / 0.1 / 0.1  ) ;
         }
+        
         u.rotate_timelevels() ;
-
         dt = CFL_ * dx ;
     }
 
@@ -303,7 +304,7 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
             calc_rhs() ;
             loop_interior (
                 [&] ( const std::size_t & idx) {
-                    u(idx) = u.old(idx) + dt * u.rhs(idx) ;
+                    u(idx) = u[1](idx) + dt * u.rhs(idx) ;
                 }
             ) ;
             sync_data();
@@ -388,6 +389,7 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
     // This will be called in an epoch
     // It simply sends gz data 
     void do_step(void_msg_t* msg) {
+        
         time_ += dt ;
         iter_ ++ ;
         substep_count_ = 0 ;
@@ -396,6 +398,7 @@ struct mesh_t : vt::Collection<mesh_t, vt::Index1D> {
         sync_data();
     }
 
+    ~mesh_t() = default ;
 
 } ;
 

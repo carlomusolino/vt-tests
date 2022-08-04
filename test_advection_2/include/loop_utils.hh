@@ -5,18 +5,15 @@
 
 namespace advect_1d { namespace utils {
 
-template< std::size_t i_min, std::size_t i_max, typename F> 
+template<typename F>
 static inline __attribute__((always_inline)) 
-void loop_simple(F&& func) {
-    for( std::size_t ii=i_min; ii<i_max; ++ii) 
-        func(ii) ;
-}
+void avt_simd_loop(std::size_t lo_, std::size_t hi_,
+                    F&& func ) 
+{
+    #pragma omp simd
+    for(std::size_t ii=lo_; ii<hi_; ++ii)
+        func(ii) ; 
 
-template< std::size_t i_min, std::size_t i_max, typename F> 
-static inline __attribute__((always_inline)) 
-void loop_inverted(F&& func) {
-    for( std::size_t ii=i_max; ii>=i_min; --ii) 
-        func(ii) ;
 }
 
 }

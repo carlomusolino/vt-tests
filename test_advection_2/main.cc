@@ -8,7 +8,6 @@ static constexpr std::size_t const d_maxiter = 50000;
 static constexpr double const d_max_time = 1 ;
 static constexpr double const d_CFL = 0.4 ;
 
-
 int main( int argc, char** argv ){
     using namespace advect_1d ;
 
@@ -74,6 +73,10 @@ int main( int argc, char** argv ){
                 ) ;
         }
     ) ;
+    
+    if( this_node == 0 ){
+        fmt::print(">>Initial data done, initiating output \n") ;
+    }
 
     vt::runInEpochCollective(
             [collection_proxy]{
@@ -93,7 +96,9 @@ int main( int argc, char** argv ){
                 > () ;
             }
         );
-
+        if( this_node == 0 ){
+        fmt::print(">> Iter done, initiating output \n") ;
+        }
         vt::runInEpochCollective(
             [collection_proxy]{
                 collection_proxy.broadcastCollective<
@@ -101,6 +106,10 @@ int main( int argc, char** argv ){
                 > () ;
             }
         ) ;
+
+        if( this_node == 0 ){
+        fmt::print(">> Output done, initiating next iteration \n") ;
+        }
 
         vt::thePhase()->nextPhaseCollective() ;
     }
