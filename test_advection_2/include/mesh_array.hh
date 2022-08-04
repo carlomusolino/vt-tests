@@ -14,7 +14,7 @@ struct mesh_array_t {
 
     struct mesh_array_destructor {
         void operator()(void* buf){  
-            fmt::print("Destructor called\n");
+            
             if( buf != nullptr  )
                 vt::thePool()->dealloc(buf) ;
                 //free(buf) ;
@@ -32,7 +32,7 @@ struct mesh_array_t {
     { } ;
 
     mesh_array_t(std::size_t size__ ): size_(size__) {
-        fmt::print("Allocating buffer of size {}\n", size_) ;
+        
         data_ = avt_unique_ptr( (T*) vt::thePool()->alloc(sizeof(T)*size_ )) ;
         //data_ = avt_unique_ptr( (T*) malloc(sizeof(T)*size_) ) ;
     }
